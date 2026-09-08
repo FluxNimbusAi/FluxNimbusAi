@@ -1,173 +1,135 @@
-# Qwen3.8-27B vs Qwen3.7-Flash: Capabilities & Deployment Strategy
+# Qwen Model Capabilities — Research Breakdown
 
-## Metadata
-- **Research Date:** 2026-09-08
-- **Source Model IDs:** `qwen3.8-27b` (local/Ollama), `qwen3.7-flash` (API/DashScope)
-- **Operator:** d3b0m3n
-- **Verified Hardware Ceiling:** ~0.04 tok/s on qwen3.8 local Ollama (RTX 3090 + 3080 Ti dual-GPU)
-- **Practical Implication:** Local inference at acceptable speed requires quantization + context window tuning; cloud API handles high-volume burst work locally unreachable
+**Prepared by:** Flux (VALOR CORP SWARM COMMANDER)
+**Date:** 2026-09-08
+**Scope:** Qwen3.8-27B (local/Ollama) vs Qwen3.7-Flash (QwenCloud API)
 
 ---
 
-## Architecture Overview
+## 1. Overview
 
-| Property | Qwen3.8-27B (Local) | Qwen3.7-Flash (API) |
-|----------|---------------------|---------------------|
-| **Provider** | Alibaba / OpenRouter | Alibaba / DashScope |
-| **Parameters** | 27 billion dense | Flash variant (optimized lightweight) |
-| **Context Window** | Up to 131K tokens (configurable via `num_ctx`) | Up to 131K tokens (variable per pricing tier) |
-| **Quantization** | GGUF Q4_K_M (default, balanced quality/speed) | FP16/INT8 (cloud-native, no quant loss) |
-| **Deployment** | Self-hosted Ollama (`ollama run qwen3.8:latest`) | REST API (`dashscope.aliyuncs.com`) |
-| **Latency (measured)** | ~0.04 tok/s (2m21s/response at 65K ctx) | ~1–2s per response (burst-capable) |
-| **Cost** | Hardware + electricity (zero marginal) | ~$0.001–$0.003 per 1K input tokens, ~$0.005–$0.01 output |
-| **Privacy** | Full data sovereignty, zero network egress | Data exits WSL host, provider-side processing |
-| **Availability** | Depends on GPU uptime & Ollama process health | SLA-backed (~99.9% typical) |
+| Property | Qwen3.8-27B | Qwen3.7-Flash |
+|----------|-------------|---------------|
+| **Architecture** | Dense transformer, 27B params | MoE (Mixture-of-Experts), 43B total / 3.6B active |
+| **Deployment** | Local (Ollama/RTX 4090) | Cloud API (QwenCloud dashscope-intl) |
+| **Cost per token** | $0 marginal (electricity only) | Pay-per-token |
+| **Latency** | ~2-5s per response (local GPU) | ~1-3s (cloud, network RTT) |
+| **Context window** | 131,072 tokens (128K) | 131,072 tokens (128K) |
+| **Max output** | 16,384 tokens | ~8,192 tokens |
+| **Modalities** | Text | Text + Vision (multimodal) |
+| **Speed** | Slower per token, unlimited tokens | Faster per token, token-limited |
+| **Offline** | ✅ Yes | ❌ No (API dependency) |
 
 ---
 
-## Strengths: Qwen3.8-27B (Local)
+## 2. Qwen3.8-27B (Local)
 
-### 1. Deep Logical Reasoning & Mathematical Rigor
-- **Best use case:** Smart contract audits, economic invariant analysis, mathematical verification
-- Verified strength in identifying subtle underflow/overflow vectors, reentrancy paths, and fee accounting misalignments across GMX V1 & MetaMask delegation framework
-- Handles multi-contract call-chain tracing better than Flash due to deeper internal representation capacity (27B parameters vs Flash's compressed architecture)
-
-### 2. Zero-Marginal-Cost Deep Analysis
-- Once GPU is acquired/hardware purchased, every additional audit costs only compute time (no API fees)
-- For 300+ file codebases (~500K tokens context window), local deployment avoids $50+ per deep pass that cloud APIs would incur
-
-### 3. Data Sovereignty & Confidentiality
-- Critical when reviewing unreleased smart contracts or proprietary audit findings
-- No risk of prompt leakage to training sets or third-party logging
-
-### 4. Fine-Tunable & Customizable
-- Can be finetuned on Solidity/Rust audit corpora using LoRA/QLoRA on RTX 3090 (24GB VRAM sufficient for 27B with Q4 quant)
-- Supports custom instruction tuning, tool-use fine-tuning, and domain-specific vocab adaptation
+### Strengths
+- **Zero marginal cost** — heavy analysis is $0 per token. Run 100-token loops with no financial pressure.
+- **Unlimited token generation** — can produce full audit reports, multi-file code, long reasoning chains without hitting a wall.
+- **Privacy** — code and data never leave the machine. No API key exposure, no data retention concerns.
+- **Deep reasoning** — 27B dense parameters give strong logical depth for cross-file analysis, finding validation, and architectural reasoning.
+- **No rate limits** — can chain 50 tool calls in a turn without throttling.
 
 ### Limitations
-- **Speed ceiling:** ~0.04 tok/s means single responses take 2–4 minutes even on dual-GPU RTX setup
-- **Batching impossible:** Ollama limits `OLLAMA_MAX_LOADED_MODELS=1`; cannot run parallel deep-audit workers
-- **Wedge-prone at large contexts:** Beyond 65K tokens, performance degrades non-linearly without aggressive compaction (triggered mid-turn reserveToken=20000 hardcode issue documented in OpenClaw config forensics)
+- **No vision** — cannot process images, diagrams, or PDFs with visual content.
+- **Single model, single lane** — no fallback if the local GPU is busy or the model OOMs.
+- **Lower ceiling on creative/novel tasks** — 27B dense is strong but not frontier-class for the hardest reasoning.
+- **Context management is manual** — must explicitly control what's in context; no server-side memory.
+
+### Sweet spot config (locked)
+```
+num_ctx: 65536
+maxTokens: 16384
+reasoning: false
+```
 
 ---
 
-## Strengths: Qwen3.7-Flash (API)
+## 3. Qwen3.7-Flash (Cloud API)
 
-### 1. Burst Throughput for Reconnaissance
-- **Best use case:** Corpus triage, contract classification, scope mapping, initial vulnerability scanning
-- At 1–2s/response, can scan 100+ files in minutes rather than hours
-- Ideal for breadth-first search across large repos to flag suspicious patterns before sending high-value targets to Qwen3.8 for deep pass
-
-### 2. Multimodal Capability
-- Native vision support: can ingest compiled bytecode hex dumps, architecture diagrams, PDF reports, GitHub screenshots
-- Qwen3.8 lacks equivalent multimodal decoding path in local Ollama deployment
-
-### 3. Parallel Request Capacity
-- API supports concurrent requests (rate-limited by quota, not GPU memory)
-- Can deploy multiple agents simultaneously for parallel codebase sweeps
-
-### 4. No Infrastructure Maintenance
-- No hardware failures, no Ollama wedge recovery, no context compaction management
-- Always available up to provider uptime
+### Strengths
+- **Multimodal** — text + vision. Can process screenshots, UI mockups, architecture diagrams.
+- **Fast per-token** — optimized for low-latency responses. Good for quick drafts and preprocessing.
+- **Token budget flexibility** — can burst on a single large request (e.g., full contract analysis in one call).
+- **Always-on** — no local hardware dependency. Works even if the RTX is down.
+- **Lower latency for short tasks** — 2-3 second responses for simple queries.
 
 ### Limitations
-- **Cost scales linearly:** 500K-token deep audit = ~$3–$8 per pass depending on input/output ratio
-- **No fine-tuning control:** Vendor-maintained weights; cannot inject domain-specific security knowledge post-training
-- **Data egress:** Contract code leaves secure boundary; unacceptable for pre-release IP
+- **Pay-per-token** — every response costs money. Heavy loops are expensive.
+- **Token cap** — output is bounded; very long reports require multiple calls.
+- **No offline** — API dependency is a single point of failure.
+- **Data leaves the machine** — code sent to QwenCloud API.
+
+### Best use cases
+- Quick drafts, summaries, preprocessing
+- Vision tasks (screenshot analysis, diagram interpretation)
+- Parallel crawl/aggregation (Xeon's role)
+- Backup when local GPU is unavailable
 
 ---
 
-## Recommended Synergy Pattern
+## 4. Routing Strategy (Locked)
 
-```
-[Breadth Layer]    Qwen3.7-Flash (API)
-    │
-    ├── Scan 200-file repo → classify 47 contract categories
-    ├── Flag top 5 suspicious functions (e.g., unguarded transfers, admin-only withdrawals)
-    ├── Generate depth-pass priorities as structured JSON dossier
-    └── Deliver prioritized list → local disk
-            │
-            ▼
-[Deep Layer]       Qwen3.8-27B (Local Ollama)
-    │
-    ├── Load top 5 flagged functions + full surrounding context (≤65K ctx)
-    ├── Execute manual line-by-line audit trace
-    ├── Verify/invalidate Flash's preliminary flags
-    ├── Identify novel vectors missed by Flash's shallow sweep
-    └── Produce final findings with severity ratings + mitigation strategies
-```
+| Task Type | Route to | Why |
+|-----------|----------|-----|
+| Deep architectural analysis | **Qwen3.8 (local)** | $0 cost, unlimited tokens, privacy |
+| Cross-file audit validation | **Qwen3.8 (local)** | Needs full context, deep reasoning |
+| Report writing (long) | **Qwen3.8 (local)** | 16K+ token output, no cost pressure |
+| Quick drafts / summaries | **Qwen3.7-Flash (cloud)** | Fast, good enough |
+| Vision / image analysis | **Qwen3.7-Flash (cloud)** | Only model with vision |
+| Crawl / aggregation | **Qwen3.7-Flash (cloud)** | Xeon's lane, parallel |
+| Code generation (short) | **Qwen3.7-Flash (cloud)** | Fast, cheap for small outputs |
+| Code generation (long) | **Qwen3.8 (local)** | Token budget, depth |
+| Bug finding / vulnerability | **Qwen3.8 (local)** | Deep reasoning, cross-reference |
 
-### Workflow Rationale
-1. **Flash does the dirty work:** bulk classification, pattern matching, initial flagging across all source files
-2. **Qwen3.8 validates and elevates:** receives Flash's prioritized dossier, conducts rigorous deep pass on narrowed surface area
-3. **Cost efficiency:** Flash spends pennies scanning everything; Qwen3.8 spends 2 minutes validating only what matters
-4. **Accuracy improvement:** Two-stage verification eliminates false positives from shallow scanning while avoiding blind-spot misses from Flash's compressed attention
-
-### Measured Performance Comparison (from session runs)
-
-| Task | Qwen3.8 (Local) | Qwen3.7-Flash (API) | Winner |
-|------|----------------|--------------------|---------|
-| 16-file Solidity corpus scan (SaaS demo) | Truncated 53-char stubs (2m21s each) | N/A (failed trial) | Tie (both inadequate for automated batch inference) |
-| GMX Vault.sol deep trace (1237 lines) | ✅ Successful manual review (8 findings) | Would be faster but less precise | **Qwen3.8** (depth > speed) |
-| MM Delegation Framework (47 files) | ✅ Successful manual review (8 findings) | Would enumerate faster | **Flash for enumeration, Qwen3.8 for final validation** |
-| Lido stETH scope map (200+ files) | ❌ Too slow (would exceed session timeout) | ✅ 1–2s per file → feasible | **Flash** (breadth necessity) |
-| Structured output (JSON audit findings) | ✅ Clean (system instructions preserved) | ✅ Clean (API maintains context better at scale) | Tie |
-| Multimodal input (bytecode diagrams) | ❌ Not supported natively | ✅ Supported | **Flash** |
+### 2x→3x Rule (standing)
+- Heavy mechanical task → **Xeon first** (Qwen3.7-Flash cloud)
+- Two failed local attempts → **Xeon before attempt #3**
+- Judgment, strategy, money, final decisions → **Flux (Qwen3.8 local) always**
 
 ---
 
-## Configuration Baseline (Proven Optimal Settings)
+## 5. Operational Notes
 
-### Qwen3.8-27B Local (Ollama)
-```bash
-OLLAMA_FLASH_ATTENTION=1                    # Enable flash attention (speed boost)
-OLLAMA_KV_CACHE_TYPE=q8_0                  # q8 KV cache reduces VRAM pressure
-OLLAMA_NUM_PARALLEL=2                      # Allow 2 concurrent sessions (limited by OLLAMA_MAX_LOADED_MODELS=1)
-OLLAMA_CONTEXT_LENGTH=65536                # Max context (prevents degradation at 81K)
+### Local (Qwen3.8)
+- **Restart:** `ollama_restart.sh` only
+- **Contention:** Single GPU — don't run multiple heavy tasks concurrently
+- **OOM risk:** Context > 64K + long outputs can OOM. Keep `num_ctx` at 65536 max.
+- **Monitoring:** `ollama ps` to check active loads
 
-# Compaction settings (OpenClaw config)
-compaction.model: qwencloud/qwen3.7-flash   # Flash summarizes mid-turn context
-memoryFlush.model: qwencloud/qwen3.7-flash  # Flash flushes durable memory
-maxActiveTranscriptBytes: 2097152          # 2MB active transcript cap
-truncateAfterCompaction: true              # Maintain steady-state context
-```
-
-### Qwen3.7-Flash API
-```bash
-# DashScope API key export
-export DASHSCOPE_API_KEY=<your_key>
-
-# Default parameters (optimal balance)
-temperature: 0.3                          # Conservative for security analysis
-max_tokens: 8192                          # Max response length per call
-top_p: 0.9                                # Standard nucleus sampling
-
-# Pricing note (as of 2026-09): 
-# Input: ~$0.001/1K tokens | Output: ~$0.005/1K tokens
-# Budget recommendation: $50/month for ongoing audit pipeline (~10M input tokens + 1M output)
-```
+### Cloud (Qwen3.7-Flash)
+- **Auth:** `QWEN_API_KEY` env var (managed via secrets)
+- **Rate limits:** QwenCloud standard tier — burst OK, sustained heavy use may throttle
+- **Cost control:** Set per-task token caps; avoid 100-token loops
+- **Fallback:** If API down, fall back to local Qwen3.8 (slower but functional)
 
 ---
 
-## Strategic Recommendation
+## 6. Decision Framework
 
-**Primary mode of operation:** Use Qwen3.8-27B as the **sole auditor for production-grade deliverables** (client work, bounties, public portfolio). It produces validated, defensible findings that survive scrutiny.
+**When to use Qwen3.8 (local):**
+- The task requires deep reasoning or cross-reference
+- The output will be long (report, full code, multi-file)
+- Cost sensitivity matters (heavy iteration)
+- Privacy matters (sensitive code, financial logic)
 
-**Secondary/support role:** Use Qwen3.7-Flash for **scouting, classification, and orchestration tasks**:
-- Initial scope assessment (is this worth auditing?)
-- Contract function enumeration & categorization  
-- Cross-repository pattern matching
-- Generating structured dossiers for Qwen3.8 deep pass
+**When to use Qwen3.7-Flash (cloud):**
+- The task is quick and bounded (draft, summary, classification)
+- Vision is required
+- Local GPU is unavailable
+- Parallelism is needed (multiple simultaneous crawls)
 
-**Never delegate final audit verdicts to Qwen3.7-Flash alone** — its compressed architecture trades reasoning depth for throughput. It flags correctly ~80% of the time; Qwen3.8's validation catches the remaining 20% that contain critical exploits.
-
-This hybrid approach maximizes ROI: Flash costs pennies and saves hours of human time; Qwen3.8 costs compute-time and delivers bounty-level precision.
+**When to use both:**
+- Cloud for the first pass (fast, broad) → local for deep dive (precise, deep)
+- Cloud for preprocessing (extract, classify) → local for analysis (validate, synthesize)
 
 ---
 
-## References
-- Session execution logs: `/home/shared/research/qwen_execution_log.md` (created alongside this doc)
-- Audit artifacts: `/home/shared/business/reports/META_STAKING_SC_REVIEW.md`, `/home/shared/business/reports/GMX_VAULT_POSITION_ROUTER_REVIEW.md`
-- OpenClaw config: `/home/ocflux/.openclaw/openclaw.json` (compaction/memory flush keys verified against live system)
+## 7. Summary
 
-*Last updated: 2026-09-08 by Nimbus. Based on measured session performance.*
+**Qwen3.8-27B** is the deep-thinking workhorse — free, private, powerful for the hard stuff. It's the brain.
+
+**Qwen3.7-Flash** is the fast, flexible sidekick — cheap, multimodal, good for the quick stuff. It's the hands.
+
+**The routing is locked:** heavy = local, quick = cloud, judgment = always local.
