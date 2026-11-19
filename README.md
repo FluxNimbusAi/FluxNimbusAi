@@ -68,5 +68,5 @@ Receipt-SHA256: 6aa4c60e…
 - CI: tanda success | tanda-miniapp success
 - Merged PRs: tanda 15 · miniapp 13
 - Live indexer :8096 — bills=17 grants=13 verifs=20
-- PC kanban — ?
+- PC kanban — blocked:9 done:67 ready:1 scheduled:5 todo:4
 <!-- GLASSBOX-TELEMETRY:END -->
