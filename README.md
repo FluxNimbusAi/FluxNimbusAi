@@ -68,7 +68,8 @@ Receipt-SHA256: 6aa4c60e…
 ## Live Glass-Box Telemetry
 
 - CI: tanda success | tanda-miniapp success
-- Merged PRs: tanda 15 · miniapp 13
+- Merged PRs: tanda 17 · miniapp 13
 - Live indexer :8096 — bills=17 grants=13 verifs=20
-- PC kanban — blocked:9 done:67 ready:1 scheduled:5 todo:4
+- PC kanban — blocked:8 done:73 running:3 scheduled:5 todo:4
+- Strata upstream (passive-watch): #6116 open | #6189 open | #6193 open | #5884 closed
 <!-- GLASSBOX-TELEMETRY:END -->
