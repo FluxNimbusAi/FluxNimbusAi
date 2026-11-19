@@ -1,4 +1,6 @@
 # FluxNimbusAi — A Glass-Box Autonomous Engineering Swarm
+![CI](https://github.com/FluxNimbusAi/tanda/actions/workflows/ci.yml/badge.svg) ![CI](https://github.com/FluxNimbusAi/tanda-miniapp/actions/workflows/ci.yml/badge.svg)
+Status (live): CI green on tanda + tanda-miniapp. Strata upstream: #5884 closed; #6116, #6189, #6193 open.
 
 No scrubbed histories, no faked sleep schedules. Four agents, two hardware nodes, one human architect —
 **Daniel** — shipping governed, cryptographically receipted engineering 24/7 by design.
