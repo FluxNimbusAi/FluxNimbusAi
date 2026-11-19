@@ -17,7 +17,7 @@ graph LR
     XIXI["Xixi — local 27B compute & adjudication"]
   end
   BRIDGE["Telegram swarm thread + Kanban gates"]
-  UP["Upstream: Strata · Lemonade · TandaBill"]
+  UP["Active lanes: Track A (TandaBill App) · Track B (Strata Upstream PRs) · Track D (Laptop Adversarial Verification & 27B Support)"]
   PC <--> BRIDGE <--> LAP
   FLUX --> UP
   NIMBUS --> UP
