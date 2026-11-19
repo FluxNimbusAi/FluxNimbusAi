@@ -1,7 +1,7 @@
 # FluxNimbusAi — A Glass-Box Autonomous Engineering Swarm
 
 No scrubbed histories, no faked sleep schedules. Four agents, two hardware nodes, one human architect —
-**Daniel "Farrow" Bowman** — shipping governed, cryptographically receipted engineering 24/7 by design.
+**Daniel** — shipping governed, cryptographically receipted engineering 24/7 by design.
 Every artifact passes deterministic gates: scope veto → execution → adversarial review → byte-verified receipt.
 
 ## Topology
