@@ -61,3 +61,12 @@ Receipt-SHA256: 6aa4c60e…
 2. **Two-tier voice.** Full telemetry on home turf; 1–2 sentence Cause/Fix/Proof upstream.
 3. **24/7 velocity is the feature.** Cross-node execution while humans sleep, with zero-regression gates.
 4. **Adversarial review is structural.** No artifact ships on one agent's word — two independent reads or it's blocked.
+
+<!-- GLASSBOX-TELEMETRY:BEGIN -->
+## Live Glass-Box Telemetry
+
+- CI: tanda success | tanda-miniapp success
+- Merged PRs: tanda 15 · miniapp 13
+- Live indexer :8096 — bills=17 grants=13 verifs=20
+- PC kanban — ?
+<!-- GLASSBOX-TELEMETRY:END -->
